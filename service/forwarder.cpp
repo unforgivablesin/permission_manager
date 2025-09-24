@@ -7,21 +7,12 @@
 #include <unordered_map>
 #include <vector>
 
+#include "client.h"
+#include "dbus.h"
 #include "forwarder.h"
+#include "log.h"
 
-void ProxyClient::set_buffer(char *buffer, size_t buffer_len) {
-    std::memcpy(m_buffer, buffer, buffer_len);
-    m_pending_bytes = buffer_len;
-    m_offset = 0;
-};
-
-void ProxyClient::advance(size_t nwrote) {
-    m_pending_bytes -= nwrote;
-    m_offset += nwrote;
-}
-
-ProxyHandler::ProxyHandler(ProxyClient client, ProxyClient forwarder)
-    : m_client(client), m_forwarder(forwarder) {
+ProxyHandler::ProxyHandler(ProxyClient client, ProxyClient forwarder) : m_client(client), m_forwarder(forwarder) {
 
     events.emplace_back(client.fd(), POLLIN, 0);
     events.emplace_back(forwarder.fd(), POLLIN, 0);
@@ -57,6 +48,14 @@ void SocketForwarder::handle_client(int forwarder, int clientfd) {
 
     ssize_t nbytes, nsend;
     char buffer[kBufferSize];
+
+    if (!dbus_ask_permission("qbittorrent", DbusPermission::Xorg, 1)) {
+        close(forwarder);
+        close(clientfd);
+        return;
+    }
+
+    logger.log("Received permission!");
 
     if (fcntl(clientfd, F_SETFL, O_NONBLOCK) < 0) {
         throw std::system_error(errno, std::generic_category(), "fcntl");
@@ -131,7 +130,7 @@ void SocketForwarder::listen(std::unique_ptr<Handler> handler) {
         }
         printf("Connected process PID: %d, UID: %d, GID: %d\n", cred.pid, cred.uid, cred.gid);
 
-        int forwarder = handler->setup_forwarder();
+        auto forwarder = handler->setup_forwarder();
         std::thread(&SocketForwarder::handle_client, this, forwarder, client).detach();
     }
 }

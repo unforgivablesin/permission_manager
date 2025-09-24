@@ -32,3 +32,8 @@
 *.out
 *.app
 
+# Meson
+build
+builddir
+
+

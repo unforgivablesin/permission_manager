@@ -11,7 +11,7 @@
 
 #include "handler.h"
 
-Handler::Handler(std::string_view path, std::string_view socket) : m_path(path) {
+Handler::Handler(std::string path, std::string socket) : m_path(path) {
     setup_listener(socket);
     setup_forwarder();
 }
@@ -52,28 +52,25 @@ int Handler::setup_forwarder() {
     return forwarder;
 }
 
-void Handler::setup_listener(std::string_view socket_name) {
+void Handler::setup_listener(std::string socket_name) {
 
     if ((m_listener = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
         throw std::system_error(errno, std::generic_category(), "socket");
     }
 
     struct sockaddr_un bind_addr = {.sun_family = AF_UNIX};
-    std::snprintf(bind_addr.sun_path, sizeof(bind_addr.sun_path) - 1, "/tmp/%s",
-                  socket_name.data());
+    std::snprintf(bind_addr.sun_path, sizeof(bind_addr.sun_path) - 1, "/tmp/%s", socket_name.data());
 
     unlink(bind_addr.sun_path);
 
     if (bind(m_listener, (struct sockaddr *)&bind_addr, sizeof(struct sockaddr_un)) < 0) {
         close_listener();
-        throw std::system_error(errno, std::generic_category(),
-                                std::format("bind {}", bind_addr.sun_path));
+        throw std::system_error(errno, std::generic_category(), std::format("bind {}", bind_addr.sun_path));
     }
 
     if (listen(m_listener, 128) < 0) {
         close_listener();
-        throw std::system_error(errno, std::generic_category(),
-                                std::format("listen {}", bind_addr.sun_path));
+        throw std::system_error(errno, std::generic_category(), std::format("listen {}", bind_addr.sun_path));
     }
 }
 
