@@ -1,1 +1,1 @@
-The permission manager for things like Xorg, Wayland, Pulseaudio, Pipewire and Dbus. This will also include fine grained permissions through protocol replication in the future.
+The permission manager for things like Xorg, Wayland, Pulseaudio, Pipewire and Dbus. This will also include fine grained permissions through protocol replication in the future. This is still ALPHA 0.1 and has debug statements in it temporarily.
